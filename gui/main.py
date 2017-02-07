@@ -8,8 +8,9 @@ from kivy.graphics.texture import Texture
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.image import Image
 from kivy.uix.label import Label
-from kivy.uix.widget import Widget
+from os import sep
 
+# This is default setup because of CV-s video capture window.
 Config.set('graphics', 'resizable', '0')
 Config.set('graphics', 'width', '640')
 Config.set('graphics', 'height', '480')
@@ -19,13 +20,22 @@ class EmotionRecognition(Image):
     def __init__(self, capture, fps, **kwargs):
         super(EmotionRecognition, self).__init__(**kwargs)
         self.capture = capture
-        self.model = load_model('../cnn_model/trained_deep_model.h5')
+        self.model = load_model('..' + sep + 'cnn_model' + sep + 'trained_deep_model.h5')
         Clock.schedule_interval(self.update, 1.0 / fps)
+        # Order is important.
         self.emotions = ["angry", "disgust", "fear", "happy", "sad", "surprise", "neutral"]
+        smile_path = '..' + sep + 'smiley' + sep
+        self.smiles = {'angry': smile_path + 'angry.png',
+                       'disgust': smile_path + 'disgust.png',
+                       'fear': smile_path + 'fear.png',
+                       'happy': smile_path + 'happy.png',
+                       'sad': smile_path + 'sad.png',
+                       'surprise': smile_path + 'surprise.png',
+                       'neutral': smile_path + 'neutral.png'}
         self.face_cascade = cv2.CascadeClassifier(
-            '../data/haarcascade_frontalface_default.xml')
+            '..' + sep + 'data' + sep + 'haarcascade_frontalface_default.xml')
         self.border = 2
-        self.image = Image(source='../smiley/happy.png')
+        self.image = Image(source=self.smiles['neutral'])
         self.label = None
         self.smiley = Image()
 
@@ -52,7 +62,7 @@ class EmotionRecognition(Image):
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), self.border)
 
                 self.label.text = "[color=ff0000]You are feeling " + self.emotions[pos] + '[/color]'
-                self.smiley.source = "../smiley/" + self.emotions[pos] + ".png"
+                self.smiley.source = self.smiles[self.emotions[pos]]
 
             buf1 = cv2.flip(frame, 0)
             buf = buf1.tostring()
@@ -63,17 +73,25 @@ class EmotionRecognition(Image):
 
 
 class CamApp(App):
+    def __init__(self):
+        super(CamApp, self).__init__()
+        self.capture = None
+        self.label = None
+        self.smiley = None
+        self.my_camera = None
+
     def build(self):
         parent = FloatLayout(size=(640, 480))
 
         self.capture = cv2.VideoCapture(0)
         self.label = Label(text='You are feeling', pos_hint={'x': -.35, 'y': .45}, markup=True)
+        self.smiley = Image(source='..' + sep + 'smiley' + sep + 'neutral.png', pos_hint={'x': 0, 'y': .02},
+                            size_hint=(0.2, 0.2))
         self.my_camera = EmotionRecognition(capture=self.capture, fps=60.0, resolution=(1366, 768))
         self.my_camera.set_label(self.label)
+        self.my_camera.set_smiley(self.smiley)
         parent.add_widget(self.my_camera)
         parent.add_widget(self.label)
-        self.smiley = Image(source="../smiley/happy.png", pos_hint={'x': 0, 'y': 0}, size_hint=(0.2, 0.2))
-        self.my_camera.set_smiley(self.smiley)
         parent.add_widget(self.smiley)
 
         return parent
