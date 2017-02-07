@@ -35,15 +35,9 @@ class EmotionRecognition(Image):
         self.face_cascade = cv2.CascadeClassifier(
             '..' + sep + 'data' + sep + 'haarcascade_frontalface_default.xml')
         self.border = 2
-        self.image = Image(source=self.smiles['neutral'])
-        self.label = None
-        self.smiley = Image()
-
-    def set_label(self, label):
-        self.label = label
-
-    def set_smiley(self, smiley):
-        self.smiley = smiley
+        self.label = Label(text='You are feeling', pos_hint={'x': -.35, 'y': .45}, markup=True)
+        self.smiley = Image(source=self.smiles['neutral'], pos_hint={'x': 0, 'y': .02},
+                            size_hint=(0.2, 0.2))
 
     def update(self, dt):
         ret, frame = self.capture.read()
@@ -84,15 +78,10 @@ class CamApp(App):
         parent = FloatLayout(size=(640, 480))
 
         self.capture = cv2.VideoCapture(0)
-        self.label = Label(text='You are feeling', pos_hint={'x': -.35, 'y': .45}, markup=True)
-        self.smiley = Image(source='..' + sep + 'smiley' + sep + 'neutral.png', pos_hint={'x': 0, 'y': .02},
-                            size_hint=(0.2, 0.2))
         self.my_camera = EmotionRecognition(capture=self.capture, fps=60.0, resolution=(1366, 768))
-        self.my_camera.set_label(self.label)
-        self.my_camera.set_smiley(self.smiley)
         parent.add_widget(self.my_camera)
-        parent.add_widget(self.label)
-        parent.add_widget(self.smiley)
+        parent.add_widget(self.my_camera.label)
+        parent.add_widget(self.my_camera.smiley)
 
         return parent
 
